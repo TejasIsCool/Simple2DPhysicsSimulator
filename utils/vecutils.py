@@ -15,7 +15,7 @@ class VecUtils:
         :return: The resulting projected vector
         """
         # Formula is
-        # ⎛ a • b̲ ⎞ b̲
+        # ⎛ a • b̲⎞ b̲
         # ⎝    |b|⎠|b|
         # (Projection * normalised vector along b)
         # Which simplifies down to below

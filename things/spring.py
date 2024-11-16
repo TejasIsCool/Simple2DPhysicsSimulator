@@ -1,5 +1,6 @@
 from typing import NamedTuple
 import py5
+from py5 import Sketch
 
 from things.point import Point
 
@@ -31,4 +32,7 @@ class Spring:
         self.p1.apply_force(relative_norm*force_mag)
         self.p2.apply_force(relative_norm*(-1*force_mag))
 
-        pass
+    # Draw a bendy spring
+    def draw(self, sketch: Sketch, line_mode: bool = True):
+        if line_mode:
+            sketch.line(self.p1.x, self.p1.y, self.p2.x, self.p2.y)

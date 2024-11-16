@@ -2,7 +2,7 @@ import random
 from os.path import split
 
 import py5
-from py5 import Sketch, mouse_x, mouse_y, Py5Vector
+from py5 import Sketch, Py5Vector
 from py5 import Py5Vector as vec
 from things.point import Point
 from things.spring import Spring, SpringProperties
@@ -288,14 +288,14 @@ class CollisionTesting(Sketch):
         ]
         for i in range(self.num_of_balls):
             offset = (self.bounds[1].x - self.bounds[0].x)*(i+0.5)/self.num_of_balls
-            mass = random.randint(2,4)
+            mass = random.randint(2,5)
             self.balls_list.append(
                 Ball(
                     BallProperties(
                         mass=mass,
                         restitution_coefficient=1,
                         pos=Py5Vector(self.bounds[0].x+offset,self.bounds[0].y+offset),
-                        radius=(random.randint(5,6))*mass
+                        radius=(random.randint(6,8))*mass
                     ))
             )
         self.frame_rate(120)
@@ -322,8 +322,16 @@ class CollisionTesting(Sketch):
         #self.save_frame(f"./output/collisiontest/attempt2/{self.count:04}.png")
 
 
-# class BallAndSpring(Sketch):
-#     pass
+class BallAndSpring(Sketch):
+    def settings(self):
+        self.size(500, 500)
+        self.bounds = (Py5Vector(0, 0), Py5Vector(self.width, self.height))
+
+    def setup(self):
+        pass
+
+    def draw(self):
+        pass
 
 simspr = CollisionTesting()
 simspr.run_sketch()

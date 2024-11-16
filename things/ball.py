@@ -7,6 +7,13 @@ from things.point import Point
 from utils.vecutils import VecUtils
 
 
+# Fix intersection with forces
+# Cause why not?
+# Electrostatic prob
+
+
+
+
 class BallProperties(NamedTuple):
     mass: float
     restitution_coefficient: float
@@ -69,9 +76,11 @@ class Ball(CollidableObject):
         if type(obj) == Point:
             obj: Point
             self.collide_point(obj)
+            self.point_intersection_canceller(obj)
         if type(obj) == Ball:
             obj: Ball
             self.collide_ball(obj)
+            self.ball_intersection_canceller(obj)
 
     def collide_point(self, obj: Point):
         # Relative vector from ball to point
@@ -116,6 +125,39 @@ class Ball(CollidableObject):
         obj: Point
         # The mathematical part is identical to a point
         self.collide_point(obj)
+
+
+    def ball_intersection_canceller(self, obj: Self):
+        """
+        During collision, the objects may intersect, and get stuck
+        We forcefully set each of them out, in the directions they are at, to avoid this ig
+        :param obj:
+        :return:
+        """
+        natural_distance = self.radius + obj.radius
+        relative_vector = obj.pos - self.pos
+        difference = natural_distance - relative_vector.mag
+        # Set them outwards, relative to their masses ig
+        # Since outwards,  ↓ is minus 1
+        self_outwards = ((-1)*relative_vector.norm)*(difference*self.mass)/(self.mass+obj.mass)
+        obj_outwards = relative_vector.norm * (difference * obj.mass) / (self.mass + obj.mass)
+
+        self.pos += self_outwards
+        obj.pos += obj_outwards
+
+    # Basically like ball, but the radius of point is 0
+    def point_intersection_canceller(self, obj: Point):
+        natural_distance = self.radius
+        relative_vector = obj.pos - self.pos
+        difference = natural_distance - relative_vector.mag
+        # Set them outwards, relative to their masses ig
+        # Since outwards,  ↓ is minus 1
+        self_outwards = ((-1) * relative_vector.norm) * (difference * self.mass) / (self.mass + obj.mass)
+        obj_outwards = relative_vector.norm * (difference * obj.mass) / (self.mass + obj.mass)
+
+        self.pos += self_outwards
+        obj.pos += obj_outwards
+
 
     @override
     def constraint_in_bound(self, bounds: tuple[Py5Vector, Py5Vector]):
