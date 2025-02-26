@@ -181,3 +181,89 @@ class Ball(CollidableObject):
         if (self.y + self.r) > bounds[1].y:
             self.y = bounds[1].y - self.r
             self.vel.y *= -1
+
+
+
+
+
+
+    def approximate_multi_particle_drag(self, obj_set: list[Self], force_coefficient: float, ray_count: int = 10):
+        # F=6(pi)(nu)rv
+        # Or F proportional to r and v
+        # Where, (nu) is the viscosity, r is the radius, v is te velocity
+        # Then we make rays downwards to see what percent of it intersects another ball
+        # 100% intersection means 0 drag, 0% intersection means full drag
+        # And then reduce the drag corresponding to this percent
+        # IF high percent of it intersects, less the drag will be
+        # (Skip calc for balls above it)
+
+
+        # Positive y is down
+        # We only want to check if y is more positive then, aka the obj y should be greater
+        # Strict inequality to remove self as well
+        possible_drag_reducers: list[Ball] = [obj for obj in obj_set if self.y < obj.y]
+
+        initial_force_magnitude = force_coefficient*self.r*self.vel.y
+
+        # Cast rays downwards
+        # Let current particle pos: (a,b)
+        # Optimization idea 1: Check if some other particle's center is withing x = a+r1+r2 or a-r1-r2
+        # (So we dont have to check down rays through useless particle, which would be slow)
+        possible_drag_reducers_2: list[Ball] = [
+            obj for obj in possible_drag_reducers if (self.x-self.r-obj.r) < obj.x < (self.x+self.r+obj.r)
+        ]
+
+        # Since the rays are downwards
+        # Just subdivide the span of the circle into ray_count parts
+        all_rays: list[float] = [self.x+(self.r*offset/(ray_count/2)) for offset in range(round(-ray_count/2), round(ray_count/2)+1)]
+        # (Actual rays = ray_count+1)
+        # We evil like that
+
+        intersect_count = 0
+        for ray in all_rays:
+            for particle in possible_drag_reducers_2:
+                if (particle.x + particle.r) > ray > (particle.x - particle.r):
+                    intersect_count += 1
+                    break
+
+        percent_intersection = intersect_count/(ray_count+1)
+
+        # 100% (or 1) intersection means 0 drag, 0% (or 0) intersection means full drag
+        actual_drag_force = initial_force_magnitude*(1-percent_intersection)
+        self.apply_force(py5.Py5Vector(0,-actual_drag_force))
+
+
+    def approximate_cohesion(self, other: Self, force_coefficient: float, closeness: float = 3):
+        # Find list of all spheres within 3r of us ig?
+        # This obj_set wont contain us, as for optimization
+        # will use this as
+        # for i in range(particles):
+        #      for j in range(i+1,particles)
+        #           ...
+
+        relative_vector = other.pos - self.pos
+        rel_vec_mag_sq = relative_vector.mag_sq
+        if  rel_vec_mag_sq >= closeness **2 * self.r**2:
+            return
+
+        # Cohesion is kinda electrostatic like ig?
+        # Its dipole dipole force, so proportional to 1/r^3
+        # Ill keep it 1/r^2 tho, cause doesent rly matter, an magsq is quicker to calc
+
+        relative_norm = relative_vector.norm
+        force_mag = force_coefficient/rel_vec_mag_sq
+        self.apply_force(relative_norm*force_mag)
+        other.apply_force(relative_norm*(-1*force_mag))
+
+
+        pass
+
+if __name__ == "__main__":
+    b = Ball(BallProperties(
+        mass=1, restitution_coefficient=1,pos=py5.Py5Vector(0,0), radius=1,
+        vel=py5.Py5Vector(0,100)
+    ))
+    b2 = Ball(BallProperties(mass=1, restitution_coefficient=1,pos=py5.Py5Vector(1,1), radius=1))
+    b3 = Ball(BallProperties(mass=1, restitution_coefficient=1,pos=py5.Py5Vector(-1.5,1), radius=1))
+    b.approximate_multi_particle_drag([b, b2,b3], 1, 10)
+    print(b.acc, b.accumulated_acceleration)

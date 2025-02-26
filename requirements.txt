@@ -1,3 +1,2 @@
 numpy
 py5
-sphinx
